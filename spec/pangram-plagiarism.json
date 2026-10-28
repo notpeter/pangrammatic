@@ -1,0 +1,327 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Pangram Plagiarism API",
+    "version": "1.0.0",
+    "description": "Check text for potential plagiarism against online content. Modeled from <https://docs.pangram.com/api-reference/plagiarism-detection>."
+  },
+  "servers": [
+    {
+      "url": "https://plagiarism.api.pangram.com"
+    }
+  ],
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "paths": {
+    "/": {
+      "post": {
+        "operationId": "checkPlagiarism",
+        "summary": "Check text for plagiarism",
+        "description": "Compares the input text against a database of online content and returns matched sources. This call is synchronous.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlagiarismRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Plagiarism result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlagiarismResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/PaymentRequired"
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key"
+      }
+    },
+    "schemas": {
+      "PlagiarismRequest": {
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "The input text to check for plagiarism."
+          }
+        }
+      },
+      "PlagiarismResult": {
+        "type": "object",
+        "required": [
+          "text",
+          "plagiarism_detected",
+          "plagiarized_content",
+          "total_sentences",
+          "plagiarized_sentences",
+          "percent_plagiarized"
+        ],
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "The input text that was checked."
+          },
+          "plagiarism_detected": {
+            "type": "boolean",
+            "description": "Whether plagiarism was detected in the text."
+          },
+          "plagiarized_content": {
+            "type": "array",
+            "description": "Detected plagiarized content, including source URLs and matched text.",
+            "items": {
+              "$ref": "#/components/schemas/PlagiarizedContent"
+            }
+          },
+          "total_sentences": {
+            "type": "integer",
+            "format": "uint32",
+            "description": "Total number of sentences in the input text."
+          },
+          "plagiarized_sentences": {
+            "type": "integer",
+            "format": "uint32",
+            "description": "Number of sentences that were detected as plagiarized."
+          },
+          "percent_plagiarized": {
+            "type": "number",
+            "format": "double",
+            "description": "Percentage (0 to 100) of input sentences that matched existing online content."
+          }
+        }
+      },
+      "PlagiarizedContent": {
+        "type": "object",
+        "required": [
+          "source_url",
+          "matched_text",
+          "similarity_score"
+        ],
+        "properties": {
+          "source_url": {
+            "type": "string",
+            "description": "The URL of the source where the match was found."
+          },
+          "matched_text": {
+            "type": "string",
+            "description": "The text that matched the source."
+          },
+          "similarity_score": {
+            "type": "number",
+            "format": "double",
+            "description": "Similarity score from 0.0 to 1.0; higher means a closer match."
+          }
+        }
+      },
+      "ErrorResponse": {
+        "description": "Error payload. Observed bodies are FastAPI style: `detail` is a human readable string (e.g. {\"detail\": \"Insufficient credits\"} for 402) or, for 422 validation failures, a list of ValidationError objects.",
+        "type": "object",
+        "required": [
+          "detail"
+        ],
+        "properties": {
+          "detail": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            ],
+            "description": "Error detail: a message string (e.g. \"Insufficient credits\" for 402), or a list of validation errors for 422."
+          }
+        },
+        "additionalProperties": true
+      },
+      "ValidationError": {
+        "type": "object",
+        "required": [
+          "type",
+          "loc",
+          "msg"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Error kind, e.g. `missing`."
+          },
+          "loc": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Location of the offending field, e.g. [\"body\", \"text\"]."
+          },
+          "msg": {
+            "type": "string",
+            "description": "Human-readable description of the validation failure."
+          },
+          "input": {
+            "description": "The rejected input value, if any.",
+            "nullable": true
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "The request body is improperly formatted.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "The x-api-key header is missing or invalid.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "PaymentRequired": {
+        "description": "The account has insufficient credits.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "detail": "Insufficient credits"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "The requested model is not enabled for the API key, or the API key does not own the requested task or bulk job.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "The requested task or bulk job does not exist.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "PayloadTooLarge": {
+        "description": "The bulk request exceeds the maximum billable units.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "UnprocessableEntity": {
+        "description": "The input text or model selector is invalid, or the request otherwise fails validation.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "detail": [
+                {
+                  "type": "missing",
+                  "loc": [
+                    "body",
+                    "text"
+                  ],
+                  "msg": "Field required",
+                  "input": null
+                }
+              ]
+            }
+          }
+        }
+      },
+      "TooManyRequests": {
+        "description": "The API key has exceeded its configured rate limit.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "There was an error processing the request.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "ServiceUnavailable": {
+        "description": "The requested model is temporarily unavailable.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}

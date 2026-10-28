@@ -1,0 +1,1054 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Pangram Text API",
+    "version": "1.0.0",
+    "description": "AI detection for text: model discovery, async single-text tasks, and bulk jobs. Modeled from <https://docs.pangram.com/api-reference/>."
+  },
+  "servers": [
+    {
+      "url": "https://text.external-api.pangram.com"
+    }
+  ],
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "paths": {
+    "/models": {
+      "get": {
+        "operationId": "listModels",
+        "summary": "List model selectors available to the API key",
+        "description": "Returns the ordered model selectors the authenticated API key can currently use. The catalog reflects entitlements and availability; preserve the server's order and do not hard-code it.",
+        "tags": [
+          "models"
+        ],
+        "responses": {
+          "200": {
+            "description": "Available model selectors.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/task": {
+      "post": {
+        "operationId": "createTask",
+        "summary": "Create an async AI detection task",
+        "description": "Creates an async inference task and returns its task ID. Poll GET /task/{task_id} until the stage is STAGE_SUCCESS or STAGE_FAILED.",
+        "tags": [
+          "task"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task accepted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskCreated"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/PaymentRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/task/{task_id}": {
+      "get": {
+        "operationId": "getTask",
+        "summary": "Get task status or result",
+        "description": "Fetches the current status or the completed result for an AI detection task.",
+        "tags": [
+          "task"
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "description": "The task ID returned by POST /task.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task status, or the full result once the task is terminal.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/bulk": {
+      "post": {
+        "operationId": "createBulk",
+        "summary": "Create a bulk AI detection job",
+        "description": "Queues many AI detection inputs as one asynchronous job. Provide exactly one of `items` or `text`. One `model` applies to the whole job. Requests over 1,000 billable units return 413.",
+        "tags": [
+          "bulk"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Bulk job accepted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkCreated"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/PaymentRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/bulk/{bulk_id}": {
+      "get": {
+        "operationId": "getBulk",
+        "summary": "Get bulk job status and counters",
+        "tags": [
+          "bulk"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BulkId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bulk job status.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/bulk/{bulk_id}/items": {
+      "get": {
+        "operationId": "listBulkItems",
+        "summary": "Get paginated item metadata for a bulk job",
+        "tags": [
+          "bulk"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BulkId"
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of item metadata.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkItemsPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/bulk/{bulk_id}/results": {
+      "get": {
+        "operationId": "listBulkResults",
+        "summary": "Get paginated results for a bulk job",
+        "tags": [
+          "bulk"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BulkId"
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of results.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkResultsPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key"
+      }
+    },
+    "parameters": {
+      "BulkId": {
+        "name": "bulk_id",
+        "in": "path",
+        "required": true,
+        "description": "The bulk job ID returned by POST /bulk.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "Offset": {
+        "name": "offset",
+        "in": "query",
+        "required": false,
+        "description": "Zero-based item offset.",
+        "schema": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0,
+          "default": 0
+        }
+      },
+      "Limit": {
+        "name": "limit",
+        "in": "query",
+        "required": false,
+        "description": "Maximum number of items to return. The maximum is 1000.",
+        "schema": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 1,
+          "maximum": 1000,
+          "default": 100
+        }
+      }
+    },
+    "schemas": {
+      "ModelsResponse": {
+        "type": "object",
+        "required": [
+          "models"
+        ],
+        "properties": {
+          "models": {
+            "type": "array",
+            "description": "Ordered model selectors currently available to the authenticated API key.",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "TaskRequest": {
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "The input text to analyze."
+          },
+          "model": {
+            "type": "string",
+            "description": "A model selector returned by GET /models. Omitted selectors resolve to \"default\" for backward compatibility; new integrations should always send one explicitly.",
+            "default": "default"
+          },
+          "public_dashboard_link": {
+            "type": "boolean",
+            "description": "Whether to include a public dashboard link in the completed response.",
+            "default": false
+          }
+        }
+      },
+      "TaskCreated": {
+        "type": "object",
+        "required": [
+          "task_id"
+        ],
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "description": "The ID of the async inference task."
+          }
+        }
+      },
+      "TaskStatus": {
+        "description": "Status of an AI detection task. While in progress only `task_id` and `stage` are present. On success the result fields are present. On failure `stage` is STAGE_FAILED and `headline` describes the error.",
+        "type": "object",
+        "required": [
+          "stage"
+        ],
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "description": "The ID of the async inference task. Present while the task is in progress."
+          },
+          "stage": {
+            "type": "string",
+            "description": "Current task stage, e.g. STAGE_PREPROCESSING. Terminal stages are STAGE_SUCCESS and STAGE_FAILED."
+          },
+          "text": {
+            "type": "string",
+            "description": "The analyzed text returned by the model. Pangram 4 may normalize the submitted text before inference; window offsets refer to this returned value."
+          },
+          "version": {
+            "type": "string",
+            "description": "The API version identifier, e.g. \"4.0\" for Pangram 4."
+          },
+          "headline": {
+            "type": "string",
+            "description": "Classification headline summarizing the result."
+          },
+          "prediction": {
+            "type": "string",
+            "description": "Long-form prediction string describing the classification."
+          },
+          "prediction_short": {
+            "type": "string",
+            "description": "Short-form prediction. Pangram 4 returns \"AI\", \"Human\", or \"Mixed\"."
+          },
+          "fraction_ai": {
+            "type": "number",
+            "format": "double",
+            "description": "Fraction of text classified as AI-written (0.0 to 1.0)."
+          },
+          "fraction_ai_assisted": {
+            "type": "number",
+            "format": "double",
+            "description": "Fraction of text classified as AI-assisted (0.0 to 1.0)."
+          },
+          "fraction_human": {
+            "type": "number",
+            "format": "double",
+            "description": "Fraction of text classified as human-written (0.0 to 1.0)."
+          },
+          "num_ai_segments": {
+            "type": "integer",
+            "format": "uint32",
+            "description": "Number of text segments classified as AI."
+          },
+          "num_ai_assisted_segments": {
+            "type": "integer",
+            "format": "uint32",
+            "description": "Number of text segments classified as AI-assisted."
+          },
+          "num_human_segments": {
+            "type": "integer",
+            "format": "uint32",
+            "description": "Number of text segments classified as human."
+          },
+          "dashboard_link": {
+            "type": "string",
+            "description": "A link to the dashboard page containing the full classification result. Present on success when public_dashboard_link was true."
+          },
+          "windows": {
+            "type": "array",
+            "description": "Overlapping text segments (windows) that were each classified independently.",
+            "items": {
+              "$ref": "#/components/schemas/Window"
+            }
+          }
+        }
+      },
+      "Window": {
+        "type": "object",
+        "required": [
+          "text",
+          "label",
+          "ai_assistance_score",
+          "confidence",
+          "start_index",
+          "end_index",
+          "word_count",
+          "token_length"
+        ],
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "The window text."
+          },
+          "label": {
+            "type": "string",
+            "description": "Descriptive classification label. Pangram 4 returns \"AI-Generated\", \"AI-Assisted\", or \"Human Written\"."
+          },
+          "ai_assistance_score": {
+            "type": "number",
+            "format": "double",
+            "description": "AI assistance score from 0.0 (entirely human-written) to 1.0 (fully AI-generated)."
+          },
+          "confidence": {
+            "type": "string",
+            "description": "Confidence level for the classification: \"High\", \"Medium\", or \"Low\"."
+          },
+          "start_index": {
+            "type": "integer",
+            "format": "uint32",
+            "description": "Starting character index in the returned top-level text."
+          },
+          "end_index": {
+            "type": "integer",
+            "format": "uint32",
+            "description": "End-exclusive character index in the returned top-level text."
+          },
+          "word_count": {
+            "type": "integer",
+            "format": "uint32",
+            "description": "Number of words in the window."
+          },
+          "token_length": {
+            "type": "integer",
+            "format": "uint32",
+            "description": "Token length of the window."
+          },
+          "is_humanized": {
+            "type": "boolean",
+            "description": "Whether Pangram 4's humanizer head classified the window as humanized. Present on every Pangram 4 window."
+          },
+          "humanizer_score": {
+            "type": "number",
+            "format": "double",
+            "description": "Pangram 4 humanizer-head score from 0.0 to 1.0. Present on every Pangram 4 window."
+          }
+        }
+      },
+      "BulkRequest": {
+        "description": "Provide exactly one of `items` or `text`; sending both returns 422.",
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "description": "List of item objects. Each item must include text and may include a unique customer-defined id.",
+            "items": {
+              "$ref": "#/components/schemas/BulkRequestItem"
+            }
+          },
+          "text": {
+            "type": "array",
+            "description": "List of input text strings. Use this simpler shape when you do not need customer item IDs.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "model": {
+            "type": "string",
+            "description": "A selector returned by GET /models. Applies to every item in the job.",
+            "default": "default"
+          }
+        }
+      },
+      "BulkRequestItem": {
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Optional customer-defined item ID. IDs must be unique within the bulk request."
+          },
+          "text": {
+            "type": "string",
+            "description": "The input text to analyze."
+          }
+        }
+      },
+      "BulkCreated": {
+        "type": "object",
+        "required": [
+          "bulk_id",
+          "status",
+          "total_items",
+          "accepted_items",
+          "failed_items"
+        ],
+        "properties": {
+          "bulk_id": {
+            "type": "string",
+            "description": "The ID of the bulk job."
+          },
+          "status": {
+            "type": "string",
+            "description": "Initial status. Usually queued; failed if every item failed immediate validation."
+          },
+          "total_items": {
+            "type": "integer",
+            "format": "uint32",
+            "description": "Total number of submitted items."
+          },
+          "accepted_items": {
+            "type": "array",
+            "description": "Items accepted for processing.",
+            "items": {
+              "$ref": "#/components/schemas/BulkAcceptedItem"
+            }
+          },
+          "failed_items": {
+            "type": "array",
+            "description": "Items that failed immediate validation.",
+            "items": {
+              "$ref": "#/components/schemas/BulkItem"
+            }
+          }
+        }
+      },
+      "BulkAcceptedItem": {
+        "type": "object",
+        "required": [
+          "index",
+          "task_id"
+        ],
+        "properties": {
+          "index": {
+            "type": "integer",
+            "format": "uint32",
+            "description": "Zero-based position of the item in the request."
+          },
+          "id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The customer-defined item ID, if one was provided."
+          },
+          "task_id": {
+            "type": "string",
+            "description": "The task ID created for this item."
+          }
+        }
+      },
+      "BulkItem": {
+        "description": "Item metadata as returned by POST /bulk failed_items, GET /bulk/{bulk_id}/items, and GET /bulk/{bulk_id}/results failed_items.",
+        "type": "object",
+        "required": [
+          "index",
+          "stage"
+        ],
+        "properties": {
+          "index": {
+            "type": "integer",
+            "format": "uint32",
+            "description": "Zero-based position of the item in the request."
+          },
+          "id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The customer-defined item ID, if one was provided."
+          },
+          "task_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The task ID created for this item; null when the item failed validation."
+          },
+          "stage": {
+            "type": "string",
+            "description": "The item's task stage, e.g. STAGE_SUCCESS or STAGE_FAILED."
+          },
+          "error": {
+            "type": "string",
+            "nullable": true,
+            "description": "Error message when the item failed."
+          }
+        }
+      },
+      "BulkResultItem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BulkItem"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "result": {
+                "nullable": true,
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/TaskStatus"
+                  }
+                ],
+                "description": "The completed result; null while the item is in progress."
+              }
+            }
+          }
+        ]
+      },
+      "BulkStatus": {
+        "type": "object",
+        "required": [
+          "bulk_id",
+          "status",
+          "total_items",
+          "accepted",
+          "succeeded",
+          "failed",
+          "created_at"
+        ],
+        "properties": {
+          "bulk_id": {
+            "type": "string",
+            "description": "The ID of the bulk job."
+          },
+          "status": {
+            "type": "string",
+            "description": "One of queued, running, succeeded, failed, or partial. Terminal statuses are succeeded, failed, and partial."
+          },
+          "total_items": {
+            "type": "integer",
+            "format": "uint32",
+            "description": "Total number of submitted items."
+          },
+          "accepted": {
+            "type": "integer",
+            "format": "uint32",
+            "description": "Number of items accepted for processing."
+          },
+          "succeeded": {
+            "type": "integer",
+            "format": "uint32",
+            "description": "Number of items that completed successfully."
+          },
+          "failed": {
+            "type": "integer",
+            "format": "uint32",
+            "description": "Number of items that failed."
+          },
+          "created_at": {
+            "type": "string",
+            "description": "Job creation timestamp as Unix epoch seconds encoded as a string, e.g. \"1760000000.0\"."
+          },
+          "completed_at": {
+            "type": "string",
+            "nullable": true,
+            "description": "Job completion timestamp as Unix epoch seconds encoded as a string. Null while the job is not terminal."
+          }
+        }
+      },
+      "BulkItemsPage": {
+        "type": "object",
+        "required": [
+          "bulk_id",
+          "offset",
+          "limit",
+          "total_items",
+          "items"
+        ],
+        "properties": {
+          "bulk_id": {
+            "type": "string",
+            "description": "The ID of the bulk job these items belong to."
+          },
+          "offset": {
+            "type": "integer",
+            "format": "uint32",
+            "description": "The returned page offset."
+          },
+          "limit": {
+            "type": "integer",
+            "format": "uint32",
+            "description": "The returned page limit."
+          },
+          "total_items": {
+            "type": "integer",
+            "format": "uint32",
+            "description": "Total number of submitted items."
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BulkItem"
+            },
+            "description": "Items in this page, in the order they were submitted."
+          }
+        }
+      },
+      "BulkResultsPage": {
+        "type": "object",
+        "required": [
+          "bulk_id",
+          "offset",
+          "limit",
+          "total_items",
+          "items",
+          "failed_items"
+        ],
+        "properties": {
+          "bulk_id": {
+            "type": "string",
+            "description": "The ID of the bulk job these results belong to."
+          },
+          "offset": {
+            "type": "integer",
+            "format": "uint32",
+            "description": "The returned page offset."
+          },
+          "limit": {
+            "type": "integer",
+            "format": "uint32",
+            "description": "The returned page limit."
+          },
+          "total_items": {
+            "type": "integer",
+            "format": "uint32",
+            "description": "Total number of submitted items."
+          },
+          "items": {
+            "type": "array",
+            "description": "Result items for successful or in-progress work. Completed items include result; in-progress items have result null.",
+            "items": {
+              "$ref": "#/components/schemas/BulkResultItem"
+            }
+          },
+          "failed_items": {
+            "type": "array",
+            "description": "Failed item metadata for the requested page.",
+            "items": {
+              "$ref": "#/components/schemas/BulkItem"
+            }
+          }
+        }
+      },
+      "ErrorResponse": {
+        "description": "Error payload. Observed bodies are FastAPI style: `detail` is a human readable string (e.g. {\"detail\": \"Insufficient credits\"} for 402) or, for 422 validation failures, a list of ValidationError objects.",
+        "type": "object",
+        "required": [
+          "detail"
+        ],
+        "properties": {
+          "detail": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            ],
+            "description": "Error detail: a message string (e.g. \"Insufficient credits\" for 402), or a list of validation errors for 422."
+          }
+        },
+        "additionalProperties": true
+      },
+      "ValidationError": {
+        "type": "object",
+        "required": [
+          "type",
+          "loc",
+          "msg"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Error kind, e.g. `missing`."
+          },
+          "loc": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Location of the offending field, e.g. [\"body\", \"text\"]."
+          },
+          "msg": {
+            "type": "string",
+            "description": "Human-readable description of the validation failure."
+          },
+          "input": {
+            "description": "The rejected input value, if any.",
+            "nullable": true
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "The request body is improperly formatted.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "The x-api-key header is missing or invalid.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "PaymentRequired": {
+        "description": "The account has insufficient credits.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "detail": "Insufficient credits"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "The requested model is not enabled for the API key, or the API key does not own the requested task or bulk job.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "The requested task or bulk job does not exist.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "PayloadTooLarge": {
+        "description": "The bulk request exceeds the maximum billable units.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "UnprocessableEntity": {
+        "description": "The input text or model selector is invalid, or the request otherwise fails validation.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "detail": [
+                {
+                  "type": "missing",
+                  "loc": [
+                    "body",
+                    "text"
+                  ],
+                  "msg": "Field required",
+                  "input": null
+                }
+              ]
+            }
+          }
+        }
+      },
+      "TooManyRequests": {
+        "description": "The API key has exceeded its configured rate limit.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "There was an error processing the request.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "ServiceUnavailable": {
+        "description": "The requested model is temporarily unavailable.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}

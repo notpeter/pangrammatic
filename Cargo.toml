@@ -1,0 +1,43 @@
+[workspace]
+resolver = "2"
+members = [
+    "pangram-rs",
+    "cli",
+    "annotate",
+    "xtask",
+]
+# `cargo run` / `cargo build` at the workspace root act on the CLI; pass
+# `--workspace` to build or test everything.
+default-members = ["cli"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MPL-2.0"
+
+[workspace.dependencies]
+pangram-rs = { path = "pangram-rs" }
+annotate = { path = "annotate" }
+
+anyhow = "1"
+clap = { version = "4", features = ["derive", "env"] }
+reqwest = { version = "0.13", features = ["json", "stream", "multipart"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "time", "fs"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# progenitor (used by xtask) and the crates its generated code depends on
+progenitor = "0.15"
+progenitor-client = "0.15"
+openapiv3 = "2.2"
+prettyplease = "0.2"
+syn = "2"
+chrono = { version = "0.4", features = ["serde"] }
+
+# PDF handling
+lopdf = "0.42"
+pdf-extract = "0.12"
+similar = "2"

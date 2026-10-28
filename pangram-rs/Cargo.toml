@@ -1,0 +1,20 @@
+[package]
+name = "pangram-rs"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Client library for the Pangram AI detection, bulk, plagiarism, and file upload APIs"
+
+[dependencies]
+chrono.workspace = true
+progenitor-client.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+wiremock = "0.6"
+tokio = { workspace = true, features = ["test-util"] }
